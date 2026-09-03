@@ -72,6 +72,33 @@ public class ConsultaUsuarioMySQL implements ConsultaUsuario {
         return -1;
     }
 
+    @Override
+    public void actualizar(int usuarioId, String nombre, String password, int rolId) {
+        String sql = "UPDATE usuarios SET nombre = ?, password = ?, rol_id = ? WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nombre);
+            stmt.setString(2, password);
+            stmt.setInt(3, rolId);
+            stmt.setInt(4, usuarioId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void desactivar(int usuarioId) {
+        String sql = "UPDATE usuarios SET esta_activo = FALSE WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, usuarioId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Metodo de apoyo: busca todos los permisos que tiene asignado un rol,
     // uniendo la tabla rol_permisos (union) con la tabla permisos.
     private List<Permiso> buscarPermisosDelRol(Connection conn, int rolId) throws SQLException {

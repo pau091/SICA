@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PantallaFuncionario {
 
@@ -74,16 +75,17 @@ public class PantallaFuncionario {
                 return;
             }
 
-            StringBuilder lista = new StringBuilder("Visitas pendientes de aprobación:\n\n");
-            for (Visita v : pendientes) {
-                lista.append("ID ").append(v.getId())
-                     .append(" - ").append(v.getPersona().getNombre())
-                     .append(" (").append(v.getPersona().getDocumento()).append(")")
-                     .append(" - ").append(v.getPersona().getTipo())
-                     .append(" - solicitado: ").append(v.getFechaIngreso())
-                     .append("\n");
-            }
-            JOptionPane.showMessageDialog(null, lista.toString());
+            // Antes esto era un "for" armando un StringBuilder a mano. Con Stream: se transforma
+            // (map) cada Visita en su línea de texto, y se unen (collect + joining) con un
+            // encabezado al principio, sin bucle ni variable mutable.
+            String lista = pendientes.stream()
+                .map(v -> "ID " + v.getId() + " - " + v.getPersona().getNombre() +
+                          " (" + v.getPersona().getDocumento() + ")" +
+                          " - " + v.getPersona().getTipo() +
+                          " - solicitado: " + v.getFechaIngreso())
+                .collect(Collectors.joining("\n", "Visitas pendientes de aprobación:\n\n", ""));
+
+            JOptionPane.showMessageDialog(null, lista);
 
             String idTexto = JOptionPane.showInputDialog(null, "Ingrese el ID de la visita a resolver:");
             if (idTexto == null || idTexto.isBlank()) return;

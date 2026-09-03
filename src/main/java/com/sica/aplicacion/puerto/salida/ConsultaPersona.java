@@ -11,4 +11,10 @@ public interface ConsultaPersona {
 
     // Devuelve el id generado para la nueva persona. empresaId puede ser null.
     int crear(String documento, String nombre, String tipoPersona, Integer empresaId);
+
+    void actualizar(int personaId, String nombre, String tipoPersona, Integer empresaId);
+
+    // Devuelve false si no se pudo borrar (por ejemplo, la persona todavía tiene visitas
+    // registradas que la referencian) — no lanza excepción para dejar esa decisión al core.
+    boolean eliminar(int personaId);
 }

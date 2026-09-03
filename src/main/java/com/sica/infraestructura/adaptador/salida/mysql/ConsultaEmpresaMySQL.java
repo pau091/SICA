@@ -52,4 +52,33 @@ public class ConsultaEmpresaMySQL implements ConsultaEmpresa {
         }
         return -1;
     }
+
+    @Override
+    public void actualizar(int empresaId, String nombre, String contactoPrincipal) {
+        String sql = "UPDATE empresas SET nombre = ?, contacto_principal = ? WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nombre);
+            stmt.setString(2, contactoPrincipal);
+            stmt.setInt(3, empresaId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean eliminar(int empresaId) {
+        String sql = "DELETE FROM empresas WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, empresaId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // Lo más probable es que falle por la FK de "personas" (esta empresa todavía
+            // tiene personas asociadas). No se distingue el motivo, se reporta como "no se pudo".
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

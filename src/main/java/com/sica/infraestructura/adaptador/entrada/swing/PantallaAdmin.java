@@ -2,6 +2,7 @@ package com.sica.infraestructura.adaptador.entrada.swing;
 
 import com.sica.dominio.excepcion.ErrorDatoDuplicado;
 import com.sica.dominio.excepcion.ErrorNoEncontrado;
+import com.sica.dominio.excepcion.ErrorOperacionNoPermitida;
 import com.sica.dominio.excepcion.ErrorSinPermiso;
 import com.sica.dominio.modelo.Usuario;
 import com.sica.dominio.modelo.Visita;
@@ -21,11 +22,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // Pantalla exclusiva del Superusuario. Antes este rol compartía pantalla con el Funcionario
 // (PantallaFuncionario) porque no tenía ninguna acción realmente propia. Ahora sí la tiene:
-// crear Usuarios, Personas y Empresas — lo que además cierra el único punto de auditoría del
-// enunciado que faltaba ("creación... de Usuarios, Personas o Empresas").
+// administrar Usuarios, Personas y Empresas (crear/actualizar/eliminar) — lo que además cierra
+// los 3 puntos de auditoría del enunciado sobre esas entidades.
 public class PantallaAdmin {
 
     private final GestorAdministracion gestorAdministracion = FabricaServicios.crearGestorAdministracion();
@@ -35,7 +37,7 @@ public class PantallaAdmin {
 
     public void mostrarMenu() {
         String[] opciones = {
-            "Crear Usuario", "Crear Persona", "Crear Empresa",
+            "Gestionar Usuarios", "Gestionar Personas", "Gestionar Empresas",
             "Pre-registrar Visita", "Aprobar Visita Excepcional", "Ver Reportes",
             "Limpiar Datos de Prueba", "Cerrar Sesión"
         };
@@ -46,11 +48,11 @@ public class PantallaAdmin {
             );
 
             if (opcion == 0) {
-                crearUsuario();
+                gestionarUsuarios();
             } else if (opcion == 1) {
-                crearPersona();
+                gestionarPersonas();
             } else if (opcion == 2) {
-                crearEmpresa();
+                gestionarEmpresas();
             } else if (opcion == 3) {
                 preRegistrarVisita();
             } else if (opcion == 4) {
@@ -64,6 +66,37 @@ public class PantallaAdmin {
             }
         }
     }
+
+    // ---------- Submenús de administración ----------
+
+    private void gestionarUsuarios() {
+        String[] opciones = {"Crear", "Actualizar", "Eliminar", "Volver"};
+        int opcion = JOptionPane.showOptionDialog(null, "Gestión de Usuarios", "SICA - Administración",
+            JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+        if (opcion == 0) crearUsuario();
+        else if (opcion == 1) actualizarUsuario();
+        else if (opcion == 2) eliminarUsuario();
+    }
+
+    private void gestionarPersonas() {
+        String[] opciones = {"Crear", "Actualizar", "Eliminar", "Volver"};
+        int opcion = JOptionPane.showOptionDialog(null, "Gestión de Personas", "SICA - Administración",
+            JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+        if (opcion == 0) crearPersona();
+        else if (opcion == 1) actualizarPersona();
+        else if (opcion == 2) eliminarPersona();
+    }
+
+    private void gestionarEmpresas() {
+        String[] opciones = {"Crear", "Actualizar", "Eliminar", "Volver"};
+        int opcion = JOptionPane.showOptionDialog(null, "Gestión de Empresas", "SICA - Administración",
+            JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+        if (opcion == 0) crearEmpresa();
+        else if (opcion == 1) actualizarEmpresa();
+        else if (opcion == 2) eliminarEmpresa();
+    }
+
+    // ---------- Usuarios ----------
 
     private void crearUsuario() {
         Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
@@ -94,6 +127,57 @@ public class PantallaAdmin {
         }
     }
 
+    private void actualizarUsuario() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String email = JOptionPane.showInputDialog(null, "Correo del usuario a actualizar:");
+        if (email == null || email.isBlank()) return;
+
+        String nombre = JOptionPane.showInputDialog(null, "Nuevo nombre:");
+        if (nombre == null || nombre.isBlank()) return;
+
+        String password = JOptionPane.showInputDialog(null, "Nueva contraseña:");
+        if (password == null || password.isBlank()) return;
+
+        String rolTexto = JOptionPane.showInputDialog(null, "Nuevo ID de rol (1-4):");
+        if (rolTexto == null || rolTexto.isBlank()) return;
+
+        try {
+            int rolId = Integer.parseInt(rolTexto.trim());
+            gestorAdministracion.actualizarUsuario(actor, email.trim(), nombre.trim(), password.trim(), rolId);
+            JOptionPane.showMessageDialog(null, "Usuario actualizado.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "El ID de rol debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarUsuario() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String email = JOptionPane.showInputDialog(null, "Correo del usuario a eliminar:");
+        if (email == null || email.isBlank()) return;
+
+        int confirmacion = JOptionPane.showConfirmDialog(null,
+            "Esto desactiva al usuario (ya no podrá loguearse), sin borrar su historial de auditoría.\n¿Continuar?",
+            "Eliminar usuario", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
+        try {
+            gestorAdministracion.eliminarUsuario(actor, email.trim());
+            JOptionPane.showMessageDialog(null, "Usuario eliminado (desactivado).");
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ---------- Personas ----------
+
     private void crearPersona() {
         Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
 
@@ -123,6 +207,60 @@ public class PantallaAdmin {
         }
     }
 
+    private void actualizarPersona() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String documento = JOptionPane.showInputDialog(null, "Documento de la persona a actualizar:");
+        if (documento == null || documento.isBlank()) return;
+
+        String nombre = JOptionPane.showInputDialog(null, "Nuevo nombre:");
+        if (nombre == null || nombre.isBlank()) return;
+
+        String tipo = JOptionPane.showInputDialog(null, "Nuevo tipo ('Trabajador' o 'Invitado'):");
+        if (tipo == null || tipo.isBlank()) return;
+
+        String empresaTexto = JOptionPane.showInputDialog(null,
+            "Nuevo ID de empresa (dejar vacío si no aplica):");
+
+        try {
+            Integer empresaId = (empresaTexto == null || empresaTexto.isBlank())
+                ? null : Integer.parseInt(empresaTexto.trim());
+            gestorAdministracion.actualizarPersona(actor, documento.trim(), nombre.trim(), tipo.trim(), empresaId);
+            JOptionPane.showMessageDialog(null, "Persona actualizada.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "El ID de empresa debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarPersona() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String documento = JOptionPane.showInputDialog(null, "Documento de la persona a eliminar:");
+        if (documento == null || documento.isBlank()) return;
+
+        int confirmacion = JOptionPane.showConfirmDialog(null,
+            "Esto borra a la persona permanentemente. Solo funciona si no tiene visitas registradas.\n¿Continuar?",
+            "Eliminar persona", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
+        try {
+            gestorAdministracion.eliminarPersona(actor, documento.trim());
+            JOptionPane.showMessageDialog(null, "Persona eliminada.");
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorOperacionNoPermitida e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "No permitido", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ---------- Empresas ----------
+
     private void crearEmpresa() {
         Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
 
@@ -132,15 +270,64 @@ public class PantallaAdmin {
         String contacto = JOptionPane.showInputDialog(null, "Contacto principal (correo o nombre):");
 
         try {
-            gestorAdministracion.crearEmpresa(actor, nombre.trim(), (contacto == null) ? null : contacto.trim());
-            JOptionPane.showMessageDialog(null, "Empresa creada.");
+            int nuevoId = gestorAdministracion.crearEmpresa(actor, nombre.trim(), (contacto == null) ? null : contacto.trim());
+            JOptionPane.showMessageDialog(null, "Empresa creada con ID " + nuevoId + ".");
         } catch (ErrorSinPermiso e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // --- El resto de estas opciones son idénticas a PantallaFuncionario: el Superusuario tiene
-    // los mismos permisos (aprobar_visita, generar_reporte) más los suyos propios de arriba. ---
+    private void actualizarEmpresa() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String idTexto = JOptionPane.showInputDialog(null, "ID de la empresa a actualizar:");
+        if (idTexto == null || idTexto.isBlank()) return;
+
+        String nombre = JOptionPane.showInputDialog(null, "Nuevo nombre:");
+        if (nombre == null || nombre.isBlank()) return;
+
+        String contacto = JOptionPane.showInputDialog(null, "Nuevo contacto principal:");
+
+        try {
+            int empresaId = Integer.parseInt(idTexto.trim());
+            gestorAdministracion.actualizarEmpresa(actor, empresaId, nombre.trim(), (contacto == null) ? null : contacto.trim());
+            JOptionPane.showMessageDialog(null, "Empresa actualizada.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "El ID debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void eliminarEmpresa() {
+        Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+
+        String idTexto = JOptionPane.showInputDialog(null, "ID de la empresa a eliminar:");
+        if (idTexto == null || idTexto.isBlank()) return;
+
+        int confirmacion = JOptionPane.showConfirmDialog(null,
+            "Esto borra la empresa permanentemente. Solo funciona si no tiene personas asociadas.\n¿Continuar?",
+            "Eliminar empresa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
+        try {
+            int empresaId = Integer.parseInt(idTexto.trim());
+            gestorAdministracion.eliminarEmpresa(actor, empresaId);
+            JOptionPane.showMessageDialog(null, "Empresa eliminada.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "El ID debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorSinPermiso e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorNoEncontrado e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ErrorOperacionNoPermitida e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "No permitido", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ---------- El resto es idéntico a lo que ya tiene PantallaFuncionario ----------
 
     private void preRegistrarVisita() {
         Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
@@ -167,16 +354,17 @@ public class PantallaAdmin {
                 return;
             }
 
-            StringBuilder lista = new StringBuilder("Visitas pendientes de aprobación:\n\n");
-            for (Visita v : pendientes) {
-                lista.append("ID ").append(v.getId())
-                     .append(" - ").append(v.getPersona().getNombre())
-                     .append(" (").append(v.getPersona().getDocumento()).append(")")
-                     .append(" - ").append(v.getPersona().getTipo())
-                     .append(" - solicitado: ").append(v.getFechaIngreso())
-                     .append("\n");
-            }
-            JOptionPane.showMessageDialog(null, lista.toString());
+            // Antes esto era un "for" armando un StringBuilder a mano. Con Stream: se transforma
+            // (map) cada Visita en su línea de texto, y se unen (collect + joining) con un
+            // encabezado al principio, sin bucle ni variable mutable.
+            String lista = pendientes.stream()
+                .map(v -> "ID " + v.getId() + " - " + v.getPersona().getNombre() +
+                          " (" + v.getPersona().getDocumento() + ")" +
+                          " - " + v.getPersona().getTipo() +
+                          " - solicitado: " + v.getFechaIngreso())
+                .collect(Collectors.joining("\n", "Visitas pendientes de aprobación:\n\n", ""));
+
+            JOptionPane.showMessageDialog(null, lista);
 
             String idTexto = JOptionPane.showInputDialog(null, "Ingrese el ID de la visita a resolver:");
             if (idTexto == null || idTexto.isBlank()) return;

@@ -77,6 +77,40 @@ public class ConsultaPersonaMySQL implements ConsultaPersona {
         return -1;
     }
 
+    @Override
+    public void actualizar(int personaId, String nombre, String tipoPersona, Integer empresaId) {
+        String sql = "UPDATE personas SET nombre = ?, tipo_persona = ?, empresa_id = ? WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nombre);
+            stmt.setString(2, tipoPersona);
+            if (empresaId != null) {
+                stmt.setInt(3, empresaId);
+            } else {
+                stmt.setNull(3, Types.INTEGER);
+            }
+            stmt.setInt(4, personaId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean eliminar(int personaId) {
+        String sql = "DELETE FROM personas WHERE id = ?";
+        try (Connection conn = ConexionBD.getInstancia();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, personaId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // Lo más probable es que falle por la FK de "visitas" (esta persona ya tiene
+            // visitas registradas). No se distingue el motivo, se reporta como "no se pudo".
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private void actualizarEstado(int personaId, int estadoAccesoId) {
         String sql = "UPDATE personas SET estado_acceso_id = ? WHERE id = ?";
         try (Connection conn = ConexionBD.getInstancia();

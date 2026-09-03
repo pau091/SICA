@@ -11,15 +11,15 @@ INSERT INTO roles (id, nombre_rol) VALUES
 
 -- Permisos
 INSERT INTO permisos (id, nombre_permiso, descripcion) VALUES
-(1, 'crear_usuario', 'Permite crear nuevos usuarios en el sistema'),
+(1, 'crear_usuario', 'Permite crear, actualizar o desactivar usuarios en el sistema'),
 (2, 'registrar_visita', 'Permite realizar check-in de visitas y personas'),
 (3, 'aprobar_visita', 'Permite autorizar o rechazar ingresos no anunciados'),
 (4, 'generar_reporte', 'Permite consultar auditorias e historial de accesos'),
 (5, 'bloquear_persona', 'Permite restringir el acceso a una persona'),
 (6, 'reportar_incidente', 'Permite registrar un incidente de seguridad'),
 (7, 'resetear_datos_prueba', 'Permite borrar visitas, incidentes y bitácora para dejar el sistema como recién instalado'),
-(8, 'crear_persona', 'Permite registrar una nueva persona (trabajador o invitado) en el sistema'),
-(9, 'crear_empresa', 'Permite registrar una nueva empresa en el complejo');
+(8, 'crear_persona', 'Permite crear, actualizar o eliminar personas (trabajadores o invitados) en el sistema'),
+(9, 'crear_empresa', 'Permite crear, actualizar o eliminar empresas del complejo');
 
 -- Permisos asignados a roles
 -- Nota: se agregó (4, 4) porque la pantalla del Funcionario ofrece "Ver Reportes" en su menú,
