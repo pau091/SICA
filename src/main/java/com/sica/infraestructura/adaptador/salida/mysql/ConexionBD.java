@@ -4,9 +4,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 public class ConexionBD {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/sica?allowPublicKeyRetrieval=true&useSSL=false";
-    private static final String USUARIO = "root";
-    private static final String PASSWORD = "Pau1091976524@"; // 
+    private static final String URL = "jdbc:mysql://localhost:3307/campus?allowPublicKeyRetrieval=true&useSSL=false";
+    private static final String USUARIO = "campus";
+    private static final String PASSWORD = "campus123"; // 
 
     private static Connection conexion = null;
 
