@@ -325,3 +325,13 @@ cualquier intento de entrada de esa persona es rechazado hasta que se use "Desbl
   sin cambiar el esquema.
 - La actualización de la pantalla del Guarda ante una aprobación no es en tiempo real (ver
   sección 6).
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  cd Escritorio/ 
+  cd SICA 
+  Ejecucion de codigo: docker compose up -d
+  code . 
+  USE campus;
+  SELECT * FROM tabla; 
+  
