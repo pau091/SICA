@@ -1,6 +1,5 @@
 package com.sica.infraestructura.adaptador.salida.mysql;
 
-import com.sica.infraestructura.adaptador.salida.mysql.ConexionBD;
 import com.sica.dominio.modelo.Permiso;
 import com.sica.dominio.modelo.Rol;
 import com.sica.dominio.modelo.Usuario;

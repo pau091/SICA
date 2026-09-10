@@ -8,6 +8,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
+
 
 public class ConsultaVisitaMySQL implements ConsultaVisita {
 
@@ -195,4 +197,28 @@ public class ConsultaVisitaMySQL implements ConsultaVisita {
 
         return new Visita(rs.getInt("id"), persona, fechaIngreso, fechaSalida, rs.getString("nombre_estado"));
     }
+
+    @Override
+public List<Visita> listarVisitasDelDia(LocalDate fecha) {
+    List<Visita> visitas = new ArrayList<>();
+    // Se solapa con el día si entró antes de que el día termine, y (sigue dentro o salió
+    // después de que el día empezara). Cubre visitas que cruzan la medianoche en cualquier sentido.
+    String sql = SELECT_BASE + "WHERE v.fecha_entrada < ? AND (v.fecha_salida IS NULL OR v.fecha_salida > ?)";
+
+    LocalDateTime inicioDia = fecha.atStartOfDay();
+    LocalDateTime finDia = inicioDia.plusDays(1);
+
+    try (Connection conn = ConexionBD.getInstancia();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setTimestamp(1, Timestamp.valueOf(finDia));
+        stmt.setTimestamp(2, Timestamp.valueOf(inicioDia));
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            visitas.add(mapear(rs));
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return visitas;
+}
 }

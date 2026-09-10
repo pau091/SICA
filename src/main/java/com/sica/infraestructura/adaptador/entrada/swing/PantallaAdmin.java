@@ -8,13 +8,11 @@ import com.sica.dominio.modelo.Usuario;
 import com.sica.dominio.modelo.Visita;
 import com.sica.aplicacion.puerto.entrada.GestorAdministracion;
 import com.sica.aplicacion.puerto.entrada.GestorAprobaciones;
-import com.sica.aplicacion.puerto.entrada.GestorDashboard;
 import com.sica.aplicacion.puerto.entrada.GestorMantenimiento;
 import com.sica.aplicacion.puerto.entrada.ValidadorAcceso;
 import com.sica.infraestructura.adaptador.salida.mysql.ConexionBD;
 import com.sica.infraestructura.config.FabricaServicios;
 import com.sica.infraestructura.config.SesionUsuario;
-import com.sica.dominio.modelo.ResumenAcceso;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -460,20 +458,6 @@ public class PantallaAdmin {
         }
     }
 
-    private final GestorDashboard gestorDashboard = FabricaServicios.crearGestorDashboard();
 
-private void mostrarDashboard() {
-    Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
-    try {
-        ResumenAcceso resumen = gestorDashboard.obtenerResumen(actor);
-        String texto = "Personas dentro ahora mismo: " + resumen.getPersonasDentro() + "\n" +
-                       "Visitas pendientes de aprobación: " + resumen.getVisitasPendientes() + "\n" +
-                       "Incidentes reportados hoy: " + resumen.getIncidentesHoy() + "\n" +
-                       "Personas con acceso bloqueado: " + resumen.getPersonasBloqueadas() + "\n" +
-                       "Empresas registradas: " + resumen.getEmpresasRegistradas();
-        JOptionPane.showMessageDialog(null, texto, "Panel de Indicadores - SICA", JOptionPane.INFORMATION_MESSAGE);
-    } catch (ErrorSinPermiso e) {
-        JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
-    }
-}
+
 }

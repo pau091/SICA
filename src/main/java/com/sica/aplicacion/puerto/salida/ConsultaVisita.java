@@ -3,8 +3,11 @@ package com.sica.aplicacion.puerto.salida;
 import com.sica.dominio.modelo.Visita;
 
 import java.util.List;
+import java.time.LocalDate;
 
 public interface ConsultaVisita {
+
+    List<Visita> listarVisitasDelDia(LocalDate fecha);
     // Ingreso directo (sin nada pendiente): crea la visita ya en estado "Dentro".
     void registrarIngreso(int personaId);
 

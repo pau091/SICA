@@ -1,6 +1,5 @@
 package com.sica.infraestructura.adaptador.salida.mysql;
 
-import com.sica.infraestructura.adaptador.salida.mysql.ConexionBD;
 import com.sica.dominio.modelo.Empresa;
 import com.sica.aplicacion.puerto.salida.ConsultaEmpresa;
 

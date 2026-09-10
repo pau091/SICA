@@ -8,7 +8,6 @@ import com.sica.aplicacion.puerto.entrada.ValidadorAcceso;
 import com.sica.infraestructura.adaptador.salida.mysql.ConexionBD;
 import com.sica.infraestructura.config.FabricaServicios;
 import com.sica.infraestructura.config.SesionUsuario;
-import com.sica.aplicacion.puerto.entrada.GestorDashboard;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -16,6 +15,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.sica.aplicacion.puerto.entrada.GestorReporteOcupacion;
+import com.sica.dominio.modelo.FranjaOcupacion;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 // Pantalla del Supervisor de Seguridad: es el rol que faltaba por implementar. El enunciado lo
 // describe como quien reporta incidentes y quien puede restringir el acceso de una persona
@@ -24,6 +29,8 @@ public class PantallaSupervisor {
 
     private final GestorIncidentes gestorIncidentes = FabricaServicios.crearGestorIncidentes();
     private final ValidadorAcceso validador = FabricaServicios.crearValidadorAcceso();
+    private final GestorReporteOcupacion gestorReporteOcupacion = FabricaServicios.crearGestorReporteOcupacion();
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public void mostrarMenu() {
         String[] opciones = {
@@ -40,16 +47,18 @@ public class PantallaSupervisor {
             );
 
             if (opcion == 0) {
-                reportarIncidente();
-            } else if (opcion == 1) {
-                cambiarBloqueo(true);
-            } else if (opcion == 2) {
-                cambiarBloqueo(false);
-            } else if (opcion == 3) {
-                mostrarTablaReportes();
-            } else {
-                break;
-            }
+                    reportarIncidente();
+                } else if (opcion == 1) {
+                    cambiarBloqueo(true);
+                } else if (opcion == 2) {
+                    cambiarBloqueo(false);
+                } else if (opcion == 3) {
+                    mostrarTablaReportes();
+                } else if (opcion == 4) {
+                    generarReporteOcupacion();
+                } else {
+                    break;
+                }
         }
     }
 
@@ -103,15 +112,15 @@ public class PantallaSupervisor {
             return;
         }
 
-        String[] columnas = {"ID Visita", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado", "Generar Reporte de Ocupación por Hora"};
+String[] columnas = {"ID Visita", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado"};
         DefaultTableModel model = new DefaultTableModel(columnas, 0);
 
-        String sql = "SELECT v.id, p.nombre, p.documento_identidad, p.tipo_persona, " +
-                     "       v.fecha_entrada, v.fecha_salida, ve.nombre_estado, " +
-                     "FROM visitas v " +
-                     "JOIN personas p ON v.persona_id = p.id " +
-                     "JOIN visita_estados ve ON v.estado_visita_id = ve.id " +
-                     "ORDER BY v.fecha_entrada DESC";
+String sql = "SELECT v.id, p.nombre, p.documento_identidad, p.tipo_persona, " +
+             "       v.fecha_entrada, v.fecha_salida, ve.nombre_estado " +
+             "FROM visitas v " +
+             "JOIN personas p ON v.persona_id = p.id " +
+             "JOIN visita_estados ve ON v.estado_visita_id = ve.id " +
+             "ORDER BY v.fecha_entrada DESC";
 
         try (Connection conn = ConexionBD.getInstancia();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -141,4 +150,39 @@ public class PantallaSupervisor {
             JOptionPane.showMessageDialog(null, "Error al cargar los reportes: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void generarReporteOcupacion() {
+    Usuario actor = SesionUsuario.getInstancia().getUsuarioActual();
+    String textoFecha = JOptionPane.showInputDialog(null, "Fecha del reporte (dd/MM/yyyy):");
+    if (textoFecha == null || textoFecha.isBlank()) return;
+
+    LocalDate fecha;
+    try {
+        fecha = LocalDate.parse(textoFecha.trim(), FORMATO_FECHA);
+    } catch (DateTimeParseException e) {
+        JOptionPane.showMessageDialog(null, "Fecha inválida. Use el formato dd/MM/yyyy.", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    try {
+        List<FranjaOcupacion> reporte = gestorReporteOcupacion.generarReporte(actor, fecha);
+        imprimirReporteEnConsola(fecha, reporte);
+        JOptionPane.showMessageDialog(null, "Reporte generado. Revisa la consola.");
+    } catch (ErrorSinPermiso e) {
+        JOptionPane.showMessageDialog(null, e.getMessage(), "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+private void imprimirReporteEnConsola(LocalDate fecha, List<FranjaOcupacion> reporte) {
+    System.out.println();
+    System.out.println("        REPORTE DE OCUPACIÓN - FECHA: " + fecha);
+    System.out.println("---------------------------------------------------------");
+    System.out.printf("| %-19s | %-33s |%n", "Franja Horaria", "Número de Personas Dentro");
+    System.out.println("---------------------------------------------------------");
+    for (FranjaOcupacion franja : reporte) {
+        String rango = String.format("%02d:00 - %02d:59", franja.getHoraInicio(), franja.getHoraInicio());
+        System.out.printf("| %-19s | %-33d |%n", rango, franja.getCantidadPersonas());
+    }
+    System.out.println("---------------------------------------------------------");
+}
 }
