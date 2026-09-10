@@ -8,7 +8,7 @@ import com.sica.aplicacion.puerto.entrada.ValidadorAcceso;
 import com.sica.infraestructura.adaptador.salida.mysql.ConexionBD;
 import com.sica.infraestructura.config.FabricaServicios;
 import com.sica.infraestructura.config.SesionUsuario;
-
+import com.sica.aplicacion.puerto.entrada.GestorDashboard;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -31,7 +31,7 @@ public class PantallaSupervisor {
             "Bloquear Persona",
             "Desbloquear Persona",
             "Ver Reportes",
-            "Cerrar Sesión"
+            "Generar Reporte de Ocupación por Hora"
         };
         while (true) {
             int opcion = JOptionPane.showOptionDialog(
@@ -103,11 +103,11 @@ public class PantallaSupervisor {
             return;
         }
 
-        String[] columnas = {"ID Visita", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado"};
+        String[] columnas = {"ID Visita", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado", "Generar Reporte de Ocupación por Hora"};
         DefaultTableModel model = new DefaultTableModel(columnas, 0);
 
         String sql = "SELECT v.id, p.nombre, p.documento_identidad, p.tipo_persona, " +
-                     "       v.fecha_entrada, v.fecha_salida, ve.nombre_estado " +
+                     "       v.fecha_entrada, v.fecha_salida, ve.nombre_estado, " +
                      "FROM visitas v " +
                      "JOIN personas p ON v.persona_id = p.id " +
                      "JOIN visita_estados ve ON v.estado_visita_id = ve.id " +

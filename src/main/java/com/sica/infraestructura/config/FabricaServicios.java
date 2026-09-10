@@ -13,5 +13,5 @@ public class FabricaServicios {
     public static GestorIncidentes crearGestorIncidentes() {return new GestorIncidentesImpl();}
     public static GestorMantenimiento crearGestorMantenimiento() {return new GestorMantenimientoImpl();}
     public static GestorAdministracion crearGestorAdministracion() {return new GestorAdministracionImpl();}
-
+    public static GestorDashboard crearGestorDashboard() {return new GestorDashboardImpl(); }
 }

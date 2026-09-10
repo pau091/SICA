@@ -123,13 +123,13 @@ public class PantallaFuncionario {
             return;
         }
 
-        String[] columnas = {"ID Visita", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado"};
+        String[] columnas = {"cantidad_usuarios", "Nombre", "Documento", "Tipo Persona", "Fecha Entrada", "Fecha Salida", "Estado"};
         DefaultTableModel model = new DefaultTableModel(columnas, 0);
 
         // Antes esta consulta pedía una columna "v.estado" que no existe en la tabla "visitas"
         // (el estado ahí se guarda como "estado_visita_id", un número que apunta a otra tabla).
         // Por eso se une con "visita_estados" para mostrar el nombre real del estado.
-        String sql = "SELECT v.id, p.nombre, p.documento_identidad, p.tipo_persona, " +
+        String sql = "SELECT v.id, p.nombre, p.cantidad_usuarios, p.tipo_persona, " +
                      "       v.fecha_entrada, v.fecha_salida, ve.nombre_estado " +
                      "FROM visitas v " +
                      "JOIN personas p ON v.persona_id = p.id " +
@@ -144,7 +144,7 @@ public class PantallaFuncionario {
                 Object[] fila = {
                     rs.getInt("id"),
                     rs.getString("nombre"),
-                    rs.getString("documento_identidad"),
+                    rs.getString("cantidad_usuarios"),
                     rs.getString("tipo_persona"),
                     rs.getTimestamp("fecha_entrada"),
                     rs.getTimestamp("fecha_salida") != null ? rs.getTimestamp("fecha_salida") : "EN CAMPUS",
